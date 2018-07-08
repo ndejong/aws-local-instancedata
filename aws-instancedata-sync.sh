@@ -7,24 +7,37 @@
 #  - http://www.apache.org/licenses/LICENSE-2.0
 
 
-AWS_INSTANCEDATA_LOCAL_PATH='/var/lib/cloud/instance/instance-data'
+AWS_INSTANCEDATA_LOCAL_DEFAULT="/var/lib/cloud/instance/instance-data"
 
 
 aws_instancedata_sync()
 {
-    aws_instancedata_aws_root=$1
-    aws_instancedata_local_path=$2
+    local local_path="$1"
+    local aws_root="$2"
+
+    # NB: defaults dealt with in long-hand because using {} approach causes Terraform to (attempt to) interpolate
+
+    if [ -z "$local_path" ]; then
+        local_path="$AWS_INSTANCEDATA_LOCAL_DEFAULT"
+    fi
+
+    if [ -z "$aws_root" ]; then
+        aws_root="/"
+    fi
 
     aws_instancedata_get()
     {
-        if [ $1 == '/meta-data/public-keys/' ]; then
+        local url
+        local aws_path="$1"
+
+        if [ "$aws_path" = "/meta-data/public-keys/" ]; then
             echo '0/openssh-key'
             return 0
-        elif [ $1 == '/' ]; then
+        elif [ "$aws_path" = "/" ]; then
             printf "dynamic/\nmeta-data/\nuser-data"
             return 0
         else
-            url='http://169.254.169.254/latest'$1
+            url="http://169.254.169.254/latest$aws_path"
         fi
 
         if [ $(uname | grep -i linux | wc -l) -gt 0 ]; then
@@ -40,26 +53,30 @@ aws_instancedata_sync()
 
     aws_instancedata_walk()
     {
-        for key in $(aws_instancedata_get "$1"); do
-            if [ $(echo -n $key | tail -c1) == '/' ]; then
-                echo "$(aws_instancedata_walk $1$key)"
+        local key
+        local filename
+        local local_path="$1"
+        local aws_path="$2"
+
+        for key in $(aws_instancedata_get "$aws_path"); do
+            if [ $(echo -n $key | tail -c1) = "/" ]; then
+                echo $(aws_instancedata_walk "$local_path" "$aws_path$key")
             else
-                filename=$aws_instancedata_local_path$1$key
-                mkdir -p "$(dirname $filename)"
-                echo "$(aws_instancedata_get $1$key)" > "$filename"
+                filename="$local_path$aws_path$key"
+                mkdir -p $(dirname "$filename")
+                echo $(aws_instancedata_get "$aws_path$key") > "$filename"
             fi
         done
     }
 
-    if [ -z $aws_instancedata_local_path ] || [ $aws_instancedata_local_path == '/' ]; then
-        echo 'FATAL: bad $aws_instancedata_local_path value'
+    if [ -z "$local_path" ] || [ "$local_path" = "/" ]; then
+        echo "FATAL: bad $local_path value"
         exit 1
     fi
-    rm -Rf "$aws_instancedata_local_path"
-    mkdir -p "$aws_instancedata_local_path"
+    rm -Rf "$local_path"
+    mkdir -p "$local_path"
 
-    aws_instancedata_walk "$aws_instancedata_aws_root"
+    aws_instancedata_walk "$local_path" "$aws_root"
 }
 
-aws_instancedata_sync "/" "$AWS_INSTANCEDATA_LOCAL_PATH"
-
+aws_instancedata_sync
