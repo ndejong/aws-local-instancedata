@@ -7,9 +7,6 @@
 #  - http://www.apache.org/licenses/LICENSE-2.0
 
 
-AWS_INSTANCEDATA_LOCAL_DEFAULT="/var/lib/cloud/instance/instance-data"
-
-
 aws_instancedata_sync()
 {
     local local_path="$1"
@@ -18,7 +15,7 @@ aws_instancedata_sync()
     # NB: defaults dealt with in long-hand because using {} approach causes Terraform to (attempt to) interpolate
 
     if [ -z "$local_path" ]; then
-        local_path="$AWS_INSTANCEDATA_LOCAL_DEFAULT"
+        local_path="/var/lib/cloud/instance/instance-data"
     fi
 
     if [ -z "$aws_root" ]; then
