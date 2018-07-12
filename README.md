@@ -33,24 +33,18 @@ aws_local_instancedata /tmp/instancedata
 ```
 
 **Example** - only create a local copy of the instance meta-data and write to an 
-alternative `/tmp/meta-data` path:-
+alternative `/tmp/meta-data` path - NB: the second `/user-data/` parameter with 
+forward-slash at beginning and end:-
 ```bash
 #/bin/sh 
 . aws-local-instancedata.sh
-aws_local_instancedata /tmp/meta-data /meta-data
-```
-
-**Example** - write the `user-data` and cause it to be executed - this can be useful 
-when you are dealing with an instance that does not have the cloudinit toolchain installed 
-at initial boot-time:-
-```bash
-#/bin/sh 
-. aws-local-instancedata.sh
-aws_local_instancedata /tmp/user-data.sh /user-data
-chmod 755 /tmp/user-data.sh
-/tmp/user-data.sh
+aws_local_instancedata /tmp/meta-data /meta-data/
 ```
 
 This toolchain helpful when bootstrapping firewall instances in AWS because network traffic rules with 
 firewall instances can (rightly or wrongly) have opinionated rules and filters that prevent access to 
 the local-net 169.254.0.0/16 address space.
+
+#### Warning
+Depending on the deployment arrangement, the instancedata may contain sensitive data, you need to consider
+if this is appropriate for your use case and manage accordingly.
