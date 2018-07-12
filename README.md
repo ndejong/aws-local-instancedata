@@ -48,3 +48,9 @@ the local-net 169.254.0.0/16 address space.
 #### Warning
 Depending on the deployment arrangement, the instancedata may contain sensitive data, you need to consider
 if this is appropriate for your use case and manage accordingly.
+
+## Authors
+This code is managed by [Verb Networks](https://github.com/verbnetworks).
+
+## License
+Apache 2 Licensed. See LICENSE file for full details.
